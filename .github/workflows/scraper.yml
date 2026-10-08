@@ -1,0 +1,66 @@
+name: Scraper
+on:
+  schedule:
+    - cron: '18 5,10,16 * * *'
+  workflow_dispatch:
+
+# Lets the workflow commit fb_posted_saudi_arabia.csv and li_posted_saudi_arabia.csv back to the repo
+permissions:
+  contents: write
+
+# Never let two runs post at the same time (would cause duplicate posts)
+concurrency:
+  group: scraper
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore tracker
+        uses: actions/cache/restore@v4
+        with:
+          path: processed_jobs_saudi_arabia.csv
+          key: tracker-${{ github.run_id }}
+          restore-keys: tracker-
+
+      - name: Run scraper
+        env:
+          FB_PAGE_ID:           ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          LI_ACCESS_TOKEN:      ${{ secrets.LI_ACCESS_TOKEN }}
+          LI_AUTHOR_URN:        ${{ secrets.LI_AUTHOR_URN }}
+          SITE_BASE_URL:        ${{ secrets.SITE_BASE_URL }}
+          FB_MAX_POSTS_PER_RUN: "15"
+          LI_MAX_POSTS_PER_RUN: "2"
+          FB_MAX_AGE_DAYS:      "1"
+        run: python sa.py
+
+      - name: Save tracker
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: processed_jobs_saudi_arabia.csv
+          key: tracker-${{ github.run_id }}
+
+      - name: Upload output as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobs-output-${{ github.run_id }}
+          # globs match both "_saudi_arabia" and "__saudi_arabia" spellings
+          path: |
+            jobs_output*saudi_arabia.xlsx
+            processed_jobs*saudi_arabia.csv
+          if-no-files-found: ignore
+          retention-days: 7
