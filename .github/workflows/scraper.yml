@@ -1,10 +1,10 @@
 name: Scraper
 on:
   schedule:
-    - cron: '18 5,10,16 * * *'
+    - cron: '48 6,11,14 * * *'
   workflow_dispatch:
 
-# Lets the workflow commit fb_posted_saudi_arabia.csv and li_posted_saudi_arabia.csv back to the repo
+# Lets the workflow commit fb_posted_nigeria.csv and li_posted_nigeria.csv back to the repo
 permissions:
   contents: write
 
@@ -30,7 +30,7 @@ jobs:
       - name: Restore tracker
         uses: actions/cache/restore@v4
         with:
-          path: processed_jobs_saudi_arabia.csv
+          path: processed_jobs_nigeria.csv
           key: tracker-${{ github.run_id }}
           restore-keys: tracker-
 
@@ -44,13 +44,13 @@ jobs:
           FB_MAX_POSTS_PER_RUN: "15"
           LI_MAX_POSTS_PER_RUN: "2"
           FB_MAX_AGE_DAYS:      "1"
-        run: python sa.py
+        run: python ng.py
 
       - name: Save tracker
         if: always()
         uses: actions/cache/save@v4
         with:
-          path: processed_jobs_saudi_arabia.csv
+          path: processed_jobs_nigeria.csv
           key: tracker-${{ github.run_id }}
 
       - name: Upload output as artifact
@@ -58,9 +58,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jobs-output-${{ github.run_id }}
-          # globs match both "_saudi_arabia" and "__saudi_arabia" spellings
+          # globs match both "_nigeria" and "__nigeria" spellings
           path: |
-            jobs_output*saudi_arabia.xlsx
-            processed_jobs*saudi_arabia.csv
+            jobs_output*nigeria.xlsx
+            processed_jobs*nigeria.csv
           if-no-files-found: ignore
           retention-days: 7
